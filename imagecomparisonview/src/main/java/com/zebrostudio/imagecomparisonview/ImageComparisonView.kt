@@ -43,7 +43,6 @@ class ImageComparisonView : ImageView {
     }
 
     private fun init(context: Context, attributeSet: AttributeSet?, defStyleRes: Int, defStyleInt: Int) {
-        println("init called")
         attributeSet?.let {
             val typedArray =
                 context.obtainStyledAttributes(it, R.styleable.ImageComparisonView, defStyleInt, defStyleInt)
@@ -70,7 +69,6 @@ class ImageComparisonView : ImageView {
                     postRect = Rect(0, height / 2, width, resolvedHeight)
                 }
             }
-
         })
     }
 
@@ -78,7 +76,6 @@ class ImageComparisonView : ImageView {
         super.onDraw(canvas)
         canvas.drawBitmap(bitmapBeforeProcessing!!, preRect, preRect, prePaint)
         canvas.drawBitmap(bitmapAfterProcessing!!, postRect, postRect, postPaint)
-        println("on draw called in")
     }
 
     fun setImageDrawables(before: Drawable, after: Drawable) {
