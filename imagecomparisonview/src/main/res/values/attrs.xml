@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="ImageComparisonView">
-        <attr name="split" format="enum">
+        <attr name="split_alignment" format="enum">
             <enum name="vertical" value="0"/>
             <enum name="horizontal" value="1"/>
+        </attr>
+        <attr name="split_at" format="enum">
+            <enum name="one_third" value="0"/>
+            <enum name="two_third" value="1"/>
+            <enum name="half" value="2"/>
         </attr>
     </declare-styleable>
 </resources>

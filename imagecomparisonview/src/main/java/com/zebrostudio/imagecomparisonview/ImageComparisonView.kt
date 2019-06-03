@@ -1,20 +1,19 @@
 package com.zebrostudio.imagecomparisonview
 
-import android.annotation.TargetApi
 import android.content.Context
-import android.content.res.Resources
 import android.graphics.*
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
-import android.os.Build.VERSION_CODES.LOLLIPOP
 import android.util.AttributeSet
 import android.view.ViewTreeObserver
 import android.widget.ImageView
 
 
 private const val SPLIT_VERTICALLY = 0
-private const val MINIMUM_WIDTH_IN_PX = 10
-private const val MINIMUM_HEIGHT_IN_PX = 10
+private const val SPLIT_AT_MIDDLE_DEFULT_ENUM_VALUE = 2
+private const val SPLIT_AT_MIDDLE = 0.5F
+private const val SPLIT_AT_ONE_THIRD = 0.25F
+private const val SPLIT_AT_TWO_THIRD = 0.75F
 
 class ImageComparisonView : ImageView {
 
@@ -23,51 +22,44 @@ class ImageComparisonView : ImageView {
     private lateinit var preRect: Rect
     private lateinit var postRect: Rect
     private var splitOrientation = SPLIT_VERTICALLY
+    private var splitAt = SPLIT_AT_MIDDLE
     private var bitmapBeforeProcessing: Bitmap? = null
     private var bitmapAfterProcessing: Bitmap? = null
 
     constructor(context: Context) : super(context) {
-        init(context, null, 0, 0)
+        init(context, null)
     }
 
     constructor(context: Context, attributeSet: AttributeSet?) : super(context, attributeSet) {
-        init(context, attributeSet, 0, 0)
+        init(context, attributeSet)
     }
 
-    @TargetApi(LOLLIPOP)
-    constructor(context: Context, attributeSet: AttributeSet?, defStyleRes: Int) : super(
-        context,
-        attributeSet,
-        defStyleRes
-    ) {
-        init(context, attributeSet, defStyleRes, 0)
-    }
-
-    private fun init(context: Context, attributeSet: AttributeSet?, defStyleRes: Int, defStyleInt: Int) {
+    private fun init(context: Context, attributeSet: AttributeSet?) {
         attributeSet?.let {
             val typedArray =
-                context.obtainStyledAttributes(it, R.styleable.ImageComparisonView, defStyleInt, defStyleInt)
-            splitOrientation = typedArray.getInt(R.styleable.ImageComparisonView_split, SPLIT_VERTICALLY)
+                context.obtainStyledAttributes(it, R.styleable.ImageComparisonView)
+            splitOrientation = typedArray.getInt(R.styleable.ImageComparisonView_split_alignment, SPLIT_VERTICALLY)
+            splitAt =
+                when (typedArray.getInt(R.styleable.ImageComparisonView_split_at, SPLIT_AT_MIDDLE_DEFULT_ENUM_VALUE)) {
+                    0 -> SPLIT_AT_ONE_THIRD
+                    1 -> SPLIT_AT_TWO_THIRD
+                    else -> SPLIT_AT_MIDDLE
+                }
             typedArray.recycle()
         }
-
+        scaleType = ScaleType.FIT_XY
         prePaint = Paint(Paint.ANTI_ALIAS_FLAG)
-        prePaint.style = Paint.Style.FILL
-        prePaint.color = resources.getColor(R.color.test)
         postPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-        postPaint.color = resources.getColor(R.color.black)
 
         this.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
             override fun onGlobalLayout() {
                 viewTreeObserver.removeOnGlobalLayoutListener(this)
                 if (splitOrientation == SPLIT_VERTICALLY) {
-                    val resolvedWidth = resolveWidth(width)
-                    preRect = Rect(0, 0, resolvedWidth / 2, height)
-                    postRect = Rect(resolvedWidth / 2, 0, resolvedWidth, height)
+                    preRect = Rect(0, 0, (width * splitAt).toInt(), height)
+                    postRect = Rect((width * splitAt).toInt(), 0, width, height)
                 } else {
-                    val resolvedHeight = resolveHeight(height)
-                    preRect = Rect(0, 0, width, resolvedHeight / 2)
-                    postRect = Rect(0, height / 2, width, resolvedHeight)
+                    preRect = Rect(0, 0, width, (height * splitAt).toInt())
+                    postRect = Rect(0, (height * splitAt).toInt(), width, height)
                 }
             }
         })
@@ -80,64 +72,48 @@ class ImageComparisonView : ImageView {
     }
 
     fun setImageDrawables(before: Drawable, after: Drawable) {
-        ((before as BitmapDrawable).bitmap).let { firstBitmap ->
-            ((after as BitmapDrawable).bitmap).let { secondBitmap ->
-                bitmapBeforeProcessing = scaleBitmap(firstBitmap, secondBitmap)
-                bitmapAfterProcessing = secondBitmap
-            }
-        }
         super.setImageDrawable(after)
+        viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+            override fun onGlobalLayout() {
+                viewTreeObserver.removeOnGlobalLayoutListener(this)
+                ((before as BitmapDrawable).bitmap).let { firstBitmap ->
+                    ((after as BitmapDrawable).bitmap).let { secondBitmap ->
+                        bitmapBeforeProcessing = scaleBitmap(firstBitmap)
+                        bitmapAfterProcessing = scaleBitmap(secondBitmap)
+                    }
+                }
+            }
+        })
     }
 
     fun setImageResources(before: Int, after: Int) {
-        (BitmapFactory.decodeResource(context.resources, before)).let { firstBitmap ->
-            (BitmapFactory.decodeResource(context.resources, after)).let { secondBitmap ->
-                bitmapBeforeProcessing = scaleBitmap(firstBitmap, secondBitmap)
-                bitmapAfterProcessing = secondBitmap
-            }
-        }
         super.setImageResource(after)
+        viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+            override fun onGlobalLayout() {
+                viewTreeObserver.removeOnGlobalLayoutListener(this)
+                (BitmapFactory.decodeResource(context.resources, before)).let { firstBitmap ->
+                    (BitmapFactory.decodeResource(context.resources, after)).let { secondBitmap ->
+                        bitmapBeforeProcessing = scaleBitmap(firstBitmap)
+                        bitmapAfterProcessing = scaleBitmap(secondBitmap)
+                    }
+                }
+            }
+
+        })
     }
 
     fun setImageBitmaps(before: Bitmap, after: Bitmap) {
-        bitmapBeforeProcessing = scaleBitmap(before, after)
-        bitmapAfterProcessing = after
         super.setImageBitmap(after)
-    }
-
-    private fun resolveWidth(width: Int): Int {
-        return getMinimumViewWidth().let {
-            if (width > it) {
-                width
-            } else {
-                it
+        viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+            override fun onGlobalLayout() {
+                viewTreeObserver.removeOnGlobalLayoutListener(this)
+                bitmapBeforeProcessing = scaleBitmap(before)
+                bitmapAfterProcessing = scaleBitmap(after)
             }
-        }
+        })
     }
 
-    private fun resolveHeight(height: Int): Int {
-        return getMinimumViewHeight().let {
-            if (height > it) {
-                height
-            } else {
-                it
-            }
-        }
-    }
-
-    private fun getMinimumViewWidth(): Int {
-        return (MINIMUM_WIDTH_IN_PX * Resources.getSystem().displayMetrics.density).toInt()
-    }
-
-    private fun getMinimumViewHeight(): Int {
-        return (MINIMUM_HEIGHT_IN_PX * Resources.getSystem().displayMetrics.density).toInt()
-    }
-
-    private fun scaleBitmap(first: Bitmap, second: Bitmap): Bitmap {
-        return if (second.width != first.width || second.height != first.height) {
-            Bitmap.createScaledBitmap(first, second.width, second.height, true)
-        } else {
-            first
-        }
+    private fun scaleBitmap(bitmap: Bitmap): Bitmap {
+        return Bitmap.createScaledBitmap(bitmap, width, height, false)
     }
 }
