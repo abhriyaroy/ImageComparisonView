@@ -13,7 +13,8 @@ import android.widget.ImageView
 
 
 private const val SPLIT_VERTICALLY = 0
-private const val MINIMUM_WIDTH = 0
+private const val MINIMUM_WIDTH_IN_PX = 10
+private const val MINIMUM_HEIGHT_IN_PX = 10
 
 class ImageComparisonView : ImageView {
 
@@ -117,10 +118,10 @@ class ImageComparisonView : ImageView {
     }
 
     private fun getMinimumViewWidth(): Int {
-        return (10 * Resources.getSystem().displayMetrics.density).toInt()
+        return (MINIMUM_WIDTH_IN_PX * Resources.getSystem().displayMetrics.density).toInt()
     }
 
     private fun getMinimumViewHeight(): Int {
-        return (10 * Resources.getSystem().displayMetrics.density).toInt()
+        return (MINIMUM_HEIGHT_IN_PX * Resources.getSystem().displayMetrics.density).toInt()
     }
 }
