@@ -80,19 +80,27 @@ class ImageComparisonView : ImageView {
     }
 
     fun setImageDrawables(before: Drawable, after: Drawable) {
-        bitmapBeforeProcessing = (before as BitmapDrawable).bitmap
-        bitmapAfterProcessing = (after as BitmapDrawable).bitmap
+        ((before as BitmapDrawable).bitmap).let { firstBitmap ->
+            ((after as BitmapDrawable).bitmap).let { secondBitmap ->
+                bitmapBeforeProcessing = scaleBitmap(firstBitmap, secondBitmap)
+                bitmapAfterProcessing = secondBitmap
+            }
+        }
         super.setImageDrawable(after)
     }
 
     fun setImageResources(before: Int, after: Int) {
-        bitmapBeforeProcessing = BitmapFactory.decodeResource(context.resources, before)
-        bitmapAfterProcessing = BitmapFactory.decodeResource(context.resources, after)
+        (BitmapFactory.decodeResource(context.resources, before)).let { firstBitmap ->
+            (BitmapFactory.decodeResource(context.resources, after)).let { secondBitmap ->
+                bitmapBeforeProcessing = scaleBitmap(firstBitmap, secondBitmap)
+                bitmapAfterProcessing = secondBitmap
+            }
+        }
         super.setImageResource(after)
     }
 
     fun setImageBitmaps(before: Bitmap, after: Bitmap) {
-        bitmapBeforeProcessing = before
+        bitmapBeforeProcessing = scaleBitmap(before, after)
         bitmapAfterProcessing = after
         super.setImageBitmap(after)
     }
@@ -123,5 +131,13 @@ class ImageComparisonView : ImageView {
 
     private fun getMinimumViewHeight(): Int {
         return (MINIMUM_HEIGHT_IN_PX * Resources.getSystem().displayMetrics.density).toInt()
+    }
+
+    private fun scaleBitmap(first: Bitmap, second: Bitmap): Bitmap {
+        return if (second.width != first.width || second.height != first.height) {
+            Bitmap.createScaledBitmap(first, second.width, second.height, true)
+        } else {
+            first
+        }
     }
 }

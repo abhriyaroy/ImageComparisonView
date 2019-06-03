@@ -1,14 +1,20 @@
 package com.zebrostudio.imagecomparisonviewexample
 
 import android.os.Bundle
-import android.support.v7.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_main.*
+import leakcanary.LeakSentry
 
 class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        imageComparisonView.setImageResources(R.mipmap.image, R.mipmap.crystallize_compare)
+        imageComparisonView.setImageResources(R.mipmap.crystallize_compare, R.mipmap.image)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        LeakSentry.refWatcher.watch(this)
     }
 }
