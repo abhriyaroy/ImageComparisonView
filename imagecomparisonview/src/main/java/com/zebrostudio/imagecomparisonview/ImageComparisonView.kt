@@ -10,19 +10,20 @@ import android.widget.ImageView
 
 
 private const val SPLIT_VERTICALLY = 0
-private const val SPLIT_AT_MIDDLE_DEFULT_ENUM_VALUE = 2
+private const val SPLIT_AT_MIDDLE_DEFAULT_ENUM_VALUE = 2
 private const val SPLIT_AT_MIDDLE = 0.5F
 private const val SPLIT_AT_ONE_THIRD = 0.25F
 private const val SPLIT_AT_TWO_THIRD = 0.75F
 
 class ImageComparisonView : ImageView {
 
-    private lateinit var prePaint: Paint
-    private lateinit var postPaint: Paint
+    private lateinit var paint: Paint
     private lateinit var preRect: Rect
     private lateinit var postRect: Rect
     private var splitOrientation = SPLIT_VERTICALLY
     private var splitAt = SPLIT_AT_MIDDLE
+    private var desiredWidth: Int? = null
+    private var desiredHeight: Int? = null
     private var bitmapBeforeProcessing: Bitmap? = null
     private var bitmapAfterProcessing: Bitmap? = null
 
@@ -40,16 +41,16 @@ class ImageComparisonView : ImageView {
                 context.obtainStyledAttributes(it, R.styleable.ImageComparisonView)
             splitOrientation = typedArray.getInt(R.styleable.ImageComparisonView_split_alignment, SPLIT_VERTICALLY)
             splitAt =
-                when (typedArray.getInt(R.styleable.ImageComparisonView_split_at, SPLIT_AT_MIDDLE_DEFULT_ENUM_VALUE)) {
+                when (typedArray.getInt(R.styleable.ImageComparisonView_split_at, SPLIT_AT_MIDDLE_DEFAULT_ENUM_VALUE)) {
                     0 -> SPLIT_AT_ONE_THIRD
                     1 -> SPLIT_AT_TWO_THIRD
                     else -> SPLIT_AT_MIDDLE
                 }
             typedArray.recycle()
         }
+
         scaleType = ScaleType.FIT_XY
-        prePaint = Paint(Paint.ANTI_ALIAS_FLAG)
-        postPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+        paint = Paint(Paint.ANTI_ALIAS_FLAG)
 
         this.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
             override fun onGlobalLayout() {
@@ -67,8 +68,20 @@ class ImageComparisonView : ImageView {
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        canvas.drawBitmap(bitmapBeforeProcessing!!, preRect, preRect, prePaint)
-        canvas.drawBitmap(bitmapAfterProcessing!!, postRect, postRect, postPaint)
+        canvas.drawBitmap(bitmapBeforeProcessing!!, preRect, preRect, paint)
+        canvas.drawBitmap(bitmapAfterProcessing!!, postRect, postRect, paint)
+    }
+
+    override fun setImageDrawable(drawable: Drawable?) {
+        throw IllegalAccessError("Please use setImageDrawables method to set drawables in comparison image view")
+    }
+
+    override fun setImageResource(resId: Int) {
+        throw IllegalAccessError("Please use setImageResources method to set resources in comparison image view")
+    }
+
+    override fun setImageBitmap(bm: Bitmap?) {
+        throw IllegalAccessError("Please use setImageBitmaps method to set bitmaps in comparison image view")
     }
 
     fun setImageDrawables(before: Drawable, after: Drawable) {
@@ -113,7 +126,12 @@ class ImageComparisonView : ImageView {
         })
     }
 
+    fun setResultDimensions(desiredWidth: Int, desiredHeight: Int) {
+        this.desiredWidth = desiredWidth
+        this.desiredHeight = desiredHeight
+    }
+
     private fun scaleBitmap(bitmap: Bitmap): Bitmap {
-        return Bitmap.createScaledBitmap(bitmap, width, height, false)
+        return Bitmap.createScaledBitmap(bitmap, desiredWidth ?: width, desiredHeight ?: height, false)
     }
 }
