@@ -74,18 +74,6 @@ class ImageComparisonView : ImageView {
         }
     }
 
-    override fun setImageDrawable(drawable: Drawable?) {
-        throw IllegalAccessError("Please use setImageDrawables method to set drawables in comparison image view")
-    }
-
-    override fun setImageResource(resId: Int) {
-        throw IllegalAccessError("Please use setImageResources method to set resources in comparison image view")
-    }
-
-    override fun setImageBitmap(bm: Bitmap?) {
-        throw IllegalAccessError("Please use setImageBitmaps method to set bitmaps in comparison image view")
-    }
-
     fun setImageDrawables(before: Drawable, after: Drawable) {
         super.setImageDrawable(after)
         viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
