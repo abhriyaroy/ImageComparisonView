@@ -68,8 +68,10 @@ class ImageComparisonView : ImageView {
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        canvas.drawBitmap(bitmapBeforeProcessing!!, preRect, preRect, paint)
-        canvas.drawBitmap(bitmapAfterProcessing!!, postRect, postRect, paint)
+        if (bitmapBeforeProcessing != null && bitmapAfterProcessing != null) {
+            canvas.drawBitmap(bitmapBeforeProcessing, preRect, preRect, paint)
+            canvas.drawBitmap(bitmapAfterProcessing, postRect, postRect, paint)
+        }
     }
 
     override fun setImageDrawable(drawable: Drawable?) {
