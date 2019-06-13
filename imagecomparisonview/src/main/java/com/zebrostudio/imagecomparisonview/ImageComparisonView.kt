@@ -5,6 +5,8 @@ import android.graphics.*
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
+import android.util.Log
+import android.view.View.MeasureSpec.*
 import android.view.ViewTreeObserver
 import android.widget.ImageView
 
@@ -66,6 +68,17 @@ class ImageComparisonView : ImageView {
         })
     }
 
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        if (desiredHeight != null && desiredWidth != null) {
+            setMeasuredDimension(
+                measureDimension(desiredWidth!!, widthMeasureSpec),
+                measureDimension(desiredHeight!!, heightMeasureSpec)
+            )
+        } else {
+            super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+        }
+    }
+
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         if (bitmapBeforeProcessing != null && bitmapAfterProcessing != null) {
@@ -117,11 +130,32 @@ class ImageComparisonView : ImageView {
     }
 
     fun setResultDimensions(desiredWidth: Int, desiredHeight: Int) {
-        this.desiredWidth = desiredWidth
-        this.desiredHeight = desiredHeight
+        this.desiredWidth = desiredWidth + paddingLeft + paddingRight
+        this.desiredHeight = desiredHeight + paddingTop + paddingBottom
+        invalidate()
+    }
+
+    private fun measureDimension(desiredSize: Int, measureSpec: Int): Int {
+        var result: Int
+        val specMode = getMode(measureSpec)
+        val specSize = getSize(measureSpec)
+
+        if (specMode == EXACTLY) {
+            result = specSize
+        } else {
+            result = desiredSize
+            if (specMode == AT_MOST) {
+                result = Math.min(result, specSize)
+            }
+        }
+
+        if (result < desiredSize) {
+            Log.e("ChartView", "The view is too small, the content might get cut")
+        }
+        return result
     }
 
     private fun scaleBitmap(bitmap: Bitmap): Bitmap {
-        return Bitmap.createScaledBitmap(bitmap, desiredWidth ?: width, desiredHeight ?: height, false)
+        return Bitmap.createScaledBitmap(bitmap, width, height, false)
     }
 }
