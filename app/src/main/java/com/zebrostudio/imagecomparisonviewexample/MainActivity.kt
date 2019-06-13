@@ -10,8 +10,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        imageComparisonView.setImageResources(R.mipmap.crystallize_compare, R.mipmap.image)
-        imageComparisonView.setResultDimensions(200, 200)
+        imageComparisonView.setImages(R.mipmap.crystallize_compare, R.mipmap.image)
     }
 
     override fun onDestroy() {

@@ -20,14 +20,16 @@ private const val SPLIT_AT_TWO_THIRD = 0.75F
 class ImageComparisonView : ImageView {
 
     private lateinit var paint: Paint
+    private lateinit var dividerPaint: Paint
     private lateinit var preRect: Rect
     private lateinit var postRect: Rect
     private var splitOrientation = SPLIT_VERTICALLY
     private var splitAt = SPLIT_AT_MIDDLE
     private var desiredWidth: Int? = null
     private var desiredHeight: Int? = null
-    private var bitmapBeforeProcessing: Bitmap? = null
-    private var bitmapAfterProcessing: Bitmap? = null
+    private var initialBitmap: Bitmap? = null
+    private var resultBitmap: Bitmap? = null
+    private var dividerVisibility = false
 
     constructor(context: Context) : super(context) {
         init(context, null)
@@ -81,50 +83,54 @@ class ImageComparisonView : ImageView {
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        if (bitmapBeforeProcessing != null && bitmapAfterProcessing != null) {
-            canvas.drawBitmap(bitmapBeforeProcessing, preRect, preRect, paint)
-            canvas.drawBitmap(bitmapAfterProcessing, postRect, postRect, paint)
+        if (initialBitmap != null && resultBitmap != null) {
+            canvas.drawBitmap(initialBitmap, preRect, preRect, paint)
+            canvas.drawBitmap(resultBitmap, postRect, postRect, paint)
         }
     }
 
-    fun setImageDrawables(before: Drawable, after: Drawable) {
-        super.setImageDrawable(after)
-        viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
-            override fun onGlobalLayout() {
-                viewTreeObserver.removeOnGlobalLayoutListener(this)
-                ((before as BitmapDrawable).bitmap).let { firstBitmap ->
-                    ((after as BitmapDrawable).bitmap).let { secondBitmap ->
-                        bitmapBeforeProcessing = scaleBitmap(firstBitmap)
-                        bitmapAfterProcessing = scaleBitmap(secondBitmap)
-                    }
-                }
-            }
-        })
+    fun setImages(before: Drawable, after: Drawable) {
+        setImages((before as BitmapDrawable).bitmap, (after as BitmapDrawable).bitmap)
     }
 
-    fun setImageResources(before: Int, after: Int) {
-        super.setImageResource(after)
-        viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
-            override fun onGlobalLayout() {
-                viewTreeObserver.removeOnGlobalLayoutListener(this)
-                (BitmapFactory.decodeResource(context.resources, before)).let { firstBitmap ->
-                    (BitmapFactory.decodeResource(context.resources, after)).let { secondBitmap ->
-                        bitmapBeforeProcessing = scaleBitmap(firstBitmap)
-                        bitmapAfterProcessing = scaleBitmap(secondBitmap)
-                    }
-                }
-            }
-
-        })
+    fun setImages(before: Drawable, after: Int) {
+        setImages((before as BitmapDrawable).bitmap, (BitmapFactory.decodeResource(context.resources, after)))
     }
 
-    fun setImageBitmaps(before: Bitmap, after: Bitmap) {
+    fun setImages(before: Drawable, after: Bitmap) {
+        setImages((before as BitmapDrawable).bitmap, after)
+    }
+
+    fun setImages(before: Int, after: Int) {
+        setImages(
+            BitmapFactory.decodeResource(context.resources, before),
+            BitmapFactory.decodeResource(context.resources, after)
+        )
+    }
+
+    fun setImages(before: Int, after: Drawable) {
+        setImages(BitmapFactory.decodeResource(context.resources, before), (after as BitmapDrawable).bitmap)
+    }
+
+    fun setImages(before: Int, after: Bitmap) {
+        setImages(BitmapFactory.decodeResource(context.resources, before), after)
+    }
+
+    fun setImages(before: Bitmap, after: Drawable) {
+        setImages(before, (after as BitmapDrawable).bitmap)
+    }
+
+    fun setImages(before: Bitmap, after: Int) {
+        setImages(before, BitmapFactory.decodeResource(context.resources, after))
+    }
+
+    fun setImages(before: Bitmap, after: Bitmap) {
         super.setImageBitmap(after)
         viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
             override fun onGlobalLayout() {
                 viewTreeObserver.removeOnGlobalLayoutListener(this)
-                bitmapBeforeProcessing = scaleBitmap(before)
-                bitmapAfterProcessing = scaleBitmap(after)
+                initialBitmap = scaleBitmap(before)
+                resultBitmap = scaleBitmap(after)
             }
         })
     }
@@ -133,6 +139,10 @@ class ImageComparisonView : ImageView {
         this.desiredWidth = desiredWidth + paddingLeft + paddingRight
         this.desiredHeight = desiredHeight + paddingTop + paddingBottom
         invalidate()
+    }
+
+    fun showDivider(flag: Boolean) {
+        dividerVisibility = flag
     }
 
     private fun measureDimension(desiredSize: Int, measureSpec: Int): Int {
