@@ -9,9 +9,9 @@ import android.util.Log
 import android.view.View.MeasureSpec.*
 import android.view.ViewTreeObserver
 import android.widget.ImageView
+import com.zebrostudio.imagecomparisonview.Alignment.VERTICAL
 
 
-private const val SPLIT_VERTICALLY = 0
 private const val SPLIT_AT_MIDDLE_DEFAULT_ENUM_VALUE = 2
 private const val SPLIT_AT_MIDDLE = 0.5F
 private const val SPLIT_AT_ONE_THIRD = 0.25F
@@ -24,7 +24,7 @@ class ImageComparisonView : ImageView {
     private lateinit var preRect: Rect
     private lateinit var postRect: Rect
     private lateinit var dividerRect: Rect
-    private var splitOrientation = SPLIT_VERTICALLY
+    private var splitAlignment = VERTICAL.ordinal
     private var splitAt = SPLIT_AT_MIDDLE
     private var desiredWidth: Int? = null
     private var desiredHeight: Int? = null
@@ -48,7 +48,7 @@ class ImageComparisonView : ImageView {
         attributeSet?.let {
             val typedArray =
                 context.obtainStyledAttributes(it, R.styleable.ImageComparisonView)
-            splitOrientation = typedArray.getInt(R.styleable.ImageComparisonView_split_alignment, SPLIT_VERTICALLY)
+            splitAlignment = typedArray.getInt(R.styleable.ImageComparisonView_split_alignment, VERTICAL.ordinal)
             splitAt =
                 when (typedArray.getInt(R.styleable.ImageComparisonView_split_at, SPLIT_AT_MIDDLE_DEFAULT_ENUM_VALUE)) {
                     0 -> SPLIT_AT_ONE_THIRD
@@ -65,37 +65,7 @@ class ImageComparisonView : ImageView {
         paint = Paint(Paint.ANTI_ALIAS_FLAG)
         dividerPaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
-        this.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
-            override fun onGlobalLayout() {
-                viewTreeObserver.removeOnGlobalLayoutListener(this)
-                if (splitOrientation == SPLIT_VERTICALLY) {
-                    dividerYRadius = 5f
-                    (width * splitAt).toInt().let {
-                        preRect = Rect(0, 0, it, height)
-                        postRect = Rect(it, 0, width, height)
-                    }
-                } else {
-                    dividerXRadius = 5f
-                    (height * splitAt).toInt().let {
-                        preRect = Rect(0, 0, width, it)
-                        postRect = Rect(0, it, width, height)
-                    }
-                }
-
-                if (dividerVisibility) {
-                    val halfDividerWidth = dividerWidth / 2
-                    if (splitOrientation == SPLIT_VERTICALLY) {
-                        (width * splitAt).toInt().let {
-                            dividerRect = Rect(it - halfDividerWidth, 0, it + halfDividerWidth, height)
-                        }
-                    } else {
-                        (height * splitAt).toInt().let {
-                            dividerRect = Rect(0, it - halfDividerWidth, width, it + halfDividerWidth)
-                        }
-                    }
-                }
-            }
-        })
+        setUpView()
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -174,6 +144,12 @@ class ImageComparisonView : ImageView {
         invalidate()
     }
 
+    fun setAlignment(alignment: Alignment) {
+        splitAlignment = alignment.ordinal
+        setUpView()
+        invalidate()
+    }
+
     fun showDivider(flag: Boolean) {
         dividerVisibility = flag
     }
@@ -208,7 +184,46 @@ class ImageComparisonView : ImageView {
         return result
     }
 
+    private fun setUpView() {
+        this.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+            override fun onGlobalLayout() {
+                viewTreeObserver.removeOnGlobalLayoutListener(this)
+                if (splitAlignment == VERTICAL.ordinal) {
+                    dividerYRadius = 5f
+                    (width * splitAt).toInt().let {
+                        preRect = Rect(0, 0, it, height)
+                        postRect = Rect(it, 0, width, height)
+                    }
+                } else {
+                    dividerXRadius = 5f
+                    (height * splitAt).toInt().let {
+                        preRect = Rect(0, 0, width, it)
+                        postRect = Rect(0, it, width, height)
+                    }
+                }
+
+                if (dividerVisibility) {
+                    val halfDividerWidth = dividerWidth / 2
+                    if (splitAlignment == VERTICAL.ordinal) {
+                        (width * splitAt).toInt().let {
+                            dividerRect = Rect(it - halfDividerWidth, 0, it + halfDividerWidth, height)
+                        }
+                    } else {
+                        (height * splitAt).toInt().let {
+                            dividerRect = Rect(0, it - halfDividerWidth, width, it + halfDividerWidth)
+                        }
+                    }
+                }
+            }
+        })
+    }
+
     private fun scaleBitmap(bitmap: Bitmap): Bitmap {
         return Bitmap.createScaledBitmap(bitmap, width, height, false)
     }
+}
+
+enum class Alignment {
+    VERTICAL,
+    HORIZONTAL
 }
