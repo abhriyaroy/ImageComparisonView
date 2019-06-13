@@ -23,13 +23,18 @@ class ImageComparisonView : ImageView {
     private lateinit var dividerPaint: Paint
     private lateinit var preRect: Rect
     private lateinit var postRect: Rect
+    private lateinit var dividerRect: Rect
     private var splitOrientation = SPLIT_VERTICALLY
     private var splitAt = SPLIT_AT_MIDDLE
     private var desiredWidth: Int? = null
     private var desiredHeight: Int? = null
     private var initialBitmap: Bitmap? = null
     private var resultBitmap: Bitmap? = null
-    private var dividerVisibility = false
+    private var dividerVisibility = true
+    private var dividerWidth = 5
+    private var dividerColor = Color.WHITE
+    private var dividerXRadius = 0f
+    private var dividerYRadius = 0f
 
     constructor(context: Context) : super(context) {
         init(context, null)
@@ -50,21 +55,44 @@ class ImageComparisonView : ImageView {
                     1 -> SPLIT_AT_TWO_THIRD
                     else -> SPLIT_AT_MIDDLE
                 }
+            dividerVisibility = typedArray.getBoolean(R.styleable.ImageComparisonView_show_divider, true)
+            dividerWidth = typedArray.getInt(R.styleable.ImageComparisonView_divider_width, 5)
+            dividerColor = typedArray.getColor(R.styleable.ImageComparisonView_divider_color, Color.WHITE)
             typedArray.recycle()
         }
 
         scaleType = ScaleType.FIT_XY
         paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        dividerPaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
         this.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
             override fun onGlobalLayout() {
                 viewTreeObserver.removeOnGlobalLayoutListener(this)
                 if (splitOrientation == SPLIT_VERTICALLY) {
-                    preRect = Rect(0, 0, (width * splitAt).toInt(), height)
-                    postRect = Rect((width * splitAt).toInt(), 0, width, height)
+                    dividerYRadius = 5f
+                    (width * splitAt).toInt().let {
+                        preRect = Rect(0, 0, it, height)
+                        postRect = Rect(it, 0, width, height)
+                    }
                 } else {
-                    preRect = Rect(0, 0, width, (height * splitAt).toInt())
-                    postRect = Rect(0, (height * splitAt).toInt(), width, height)
+                    dividerXRadius = 5f
+                    (height * splitAt).toInt().let {
+                        preRect = Rect(0, 0, width, it)
+                        postRect = Rect(0, it, width, height)
+                    }
+                }
+
+                if (dividerVisibility) {
+                    val halfDividerWidth = dividerWidth / 2
+                    if (splitOrientation == SPLIT_VERTICALLY) {
+                        (width * splitAt).toInt().let {
+                            dividerRect = Rect(it - halfDividerWidth, 0, it + halfDividerWidth, height)
+                        }
+                    } else {
+                        (height * splitAt).toInt().let {
+                            dividerRect = Rect(0, it - halfDividerWidth, width, it + halfDividerWidth)
+                        }
+                    }
                 }
             }
         })
@@ -86,6 +114,11 @@ class ImageComparisonView : ImageView {
         if (initialBitmap != null && resultBitmap != null) {
             canvas.drawBitmap(initialBitmap, preRect, preRect, paint)
             canvas.drawBitmap(resultBitmap, postRect, postRect, paint)
+
+            if (dividerVisibility) {
+                dividerPaint.color = dividerColor
+                canvas.drawRect(dividerRect, dividerPaint)
+            }
         }
     }
 
@@ -143,6 +176,16 @@ class ImageComparisonView : ImageView {
 
     fun showDivider(flag: Boolean) {
         dividerVisibility = flag
+    }
+
+    fun setDividerColor(color: Int) {
+        dividerColor = color
+        invalidate()
+    }
+
+    fun setDividerWidth(width: Int) {
+        dividerWidth = width
+        invalidate()
     }
 
     private fun measureDimension(desiredSize: Int, measureSpec: Int): Int {

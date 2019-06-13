@@ -10,5 +10,8 @@
             <enum name="two_third" value="1"/>
             <enum name="half" value="2"/>
         </attr>
+        <attr name="show_divider" format="boolean"/>
+        <attr name="divider_width" format="integer"/>
+        <attr name="divider_color" format="color"/>
     </declare-styleable>
 </resources>
